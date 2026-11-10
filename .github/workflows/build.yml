@@ -498,14 +498,14 @@ jobs:
                   }
 
                   @JavascriptInterface
-                  fun sendSms(number: String, text: String): Boolean {
-                      if (!hasSms()) return false
+                  fun sendSms(number: String, text: String): String {
+                      if (!hasSms()) return "SMS permission not allowed"
                       return try {
                           val sm: SmsManager = if (Build.VERSION.SDK_INT >= 31) getSystemService(SmsManager::class.java) else SmsManager.getDefault()
                           sm.sendMultipartTextMessage(number, null, sm.divideMessage(text), null, null)
-                          true
+                          "ok"
                       } catch (e: Exception) {
-                          false
+                          e.javaClass.simpleName + ": " + (e.message ?: "")
                       }
                   }
               }
