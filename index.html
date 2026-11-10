@@ -71,6 +71,9 @@ nav button.on{color:var(--g)}nav svg{width:24px;height:24px}
 .abox .link{background:none;color:var(--mut);font-weight:400;font-size:13px;text-decoration:underline}
 .lo{margin-left:auto;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);padding:8px 12px;font-size:13px}
 body.locked header,body.locked main,body.locked nav{display:none}
+nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d33;color:#fff;border-radius:99px;font-size:10px;padding:0 6px;line-height:16px}
+.ph{width:100%;margin:2px 0 8px;font-size:14px;padding:8px 10px}
+#notes .ev button{padding:6px 10px;font-size:13px}
 </style>
 </head>
 <body class="locked">
@@ -105,22 +108,23 @@ body.locked header,body.locked main,body.locked nav{display:none}
   </div>
   <div class="card"><h2>Last 7 days</h2><div class="bars" id="bars"></div></div>
   <div class="card"><h2>Recent activity</h2><div id="evs"></div></div>
-  <div class="card"><h2>Settings</h2><div class="row" style="align-items:center;margin:0"><span class="sub">Late after</span><input id="cutoff" type="time" style="flex:0 0 120px"><button class="ghost" id="resetBtn" style="margin-left:auto">Reset today</button></div></div>
+  <div class="card"><h2>Settings</h2><div class="row" style="align-items:center;margin:0"><span class="sub">Late after</span><input id="cutoff" type="time" style="flex:0 0 120px"><button class="ghost" id="resetBtn" style="margin-left:auto">Reset today</button></div><div class="row" style="align-items:center;margin:10px 0 0"><span class="sub">Parent message language</span><select id="langSel" style="margin-left:auto;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option value="en">English</option><option value="ur">اردو</option><option value="both">Both</option></select></div></div>
 </section>
 <section class="view" id="v-scan">
   <div class="card"><div class="top"><h2 style="margin:0">Scan student barcode</h2><button id="scanBtn">Start camera</button></div>
     <div id="reader"></div><div id="toast"></div>
     <div class="row" style="margin:12px 0 0"><input id="manual" placeholder="Or type / scan code here"><button class="ghost" id="manualBtn">Go</button></div>
     <p class="sub">First scan clocks in, second scan clocks out.</p></div>
+  <div class="card" id="notesCard" hidden><h2>Messages to parents <span class="tag" id="nCount"></span></h2><div id="notes"></div><p class="sub">Tap WhatsApp or SMS. The message opens ready to send.</p></div>
 </section>
 <section class="view" id="v-stu">
-  <div class="card"><h2>Add student</h2><div class="row"><input id="newName" placeholder="Student name" maxlength="40"><input id="newCls" placeholder="Class" maxlength="12" style="flex:0 0 90px"></div><button id="addBtn" style="width:100%">Add student</button></div>
+  <div class="card"><h2>Add student</h2><div class="row"><input id="newName" placeholder="Student name" maxlength="40"><input id="newCls" placeholder="Class" maxlength="12" style="flex:0 0 90px"></div><input id="newPh" type="tel" inputmode="tel" placeholder="Parent WhatsApp number (03001234567)" style="width:100%;margin-bottom:10px"><button id="addBtn" style="width:100%">Add student</button></div>
   <div id="list"></div>
 </section>
 </main>
 <nav><div>
   <button class="on" data-v="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
-  <button data-v="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan</button>
+  <button data-v="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan<span class="bdg" id="nBadge" hidden></span></button>
   <button data-v="stu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-4 3-6 6.500-6s6 2 6.500 6M16 5a3.500 3.500 0 0 1 0 7M18 14c2 .6 3.200 2.600 3.500 6"/></svg>Students</button>
 </div></nav>
 <div id="bcModal" class="modal" hidden><div class="mbox"><div class="idc"><img class="lg" alt="" style="width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 6px"><h3>ISLAMIA MODEL SCHOOL AGARAI</h3><div class="name" id="bcName" style="margin-top:6px"></div><div class="sub" id="bcCls"></div><svg id="bcSvg"></svg><div class="sub" id="bcCode"></div></div><div class="btns" style="margin-top:12px"><button class="ghost" id="bcPrint">Print</button><button id="bcClose">Close</button></div></div></div>
@@ -140,7 +144,11 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const day=()=>S.log[dk()]=S.log[dk()]||{};
 const rec=id=>day()[id]||{};
 function isLate(t){const d=new Date(t),[h,m]=S.cutoff.split(':').map(Number);return d.getHours()*60+d.getMinutes()>h*60+m}
-function clock(id,type){const r=day()[id]=day()[id]||{};if(type==='in'&&!r.in)r.in=Date.now();if(type==='out'&&r.in&&!r.out)r.out=Date.now();save();render()}
+function clock(id,type){const r=day()[id]=day()[id]||{};let ch=0;
+  if(type==='in'&&!r.in){r.in=Date.now();ch=r.in}
+  if(type==='out'&&r.in&&!r.out){r.out=Date.now();ch=r.out}
+  if(ch){const s=S.students.find(x=>x.id===id);if(s&&s.phone)(S.notes=S.notes||[]).push({sid:id,name:s.name,cls:s.cls||'',phone:s.phone,type,t:ch})}
+  save();render()}
 function render(){
   $('date').textContent=new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   $('cutoff').value=S.cutoff;
@@ -159,7 +167,7 @@ function render(){
   $('list').innerHTML=T?S.students.map(s=>{
     const r=rec(s.id);let g='<span class="tag no">Not in</span>';
     if(r.in)g=r.out?'<span class="tag out">Clocked out</span>':isLate(r.in)?'<span class="tag late">Late</span>':'<span class="tag">In class</span>';
-    return '<div class="card"><div class="top"><div><div class="name">'+esc(s.name)+'</div><div class="sub">'+(s.cls?'Class '+esc(s.cls)+' · ':'')+s.id+'</div></div><span>'+g+'<button class="x" data-del="'+s.id+'" aria-label="Remove">×</button></span></div><div class="times">'+(r.in?'In '+hm(r.in)+(r.out?' · Out '+hm(r.out):''):'No activity today')+'</div><div class="btns"><button data-in="'+s.id+'"'+(r.in?' disabled':'')+'>Clock in</button><button class="outb" data-out="'+s.id+'"'+(!r.in||r.out?' disabled':'')+'>Clock out</button><button class="ghost" data-bc="'+s.id+'">Barcode</button></div></div>'}).join(''):'<div class="empty">No students yet. Add your first one above.</div>';
+    return '<div class="card"><div class="top"><div><div class="name">'+esc(s.name)+'</div><div class="sub">'+(s.cls?'Class '+esc(s.cls)+' · ':'')+s.id+'</div></div><span>'+g+'<button class="x" data-del="'+s.id+'" aria-label="Remove">×</button></span></div><div class="times">'+(r.in?'In '+hm(r.in)+(r.out?' · Out '+hm(r.out):''):'No activity today')+'</div><input class="ph" data-ph="'+s.id+'" type="tel" inputmode="tel" placeholder="Parent WhatsApp number" value="'+esc(s.phone||'')+'"><div class="btns"><button data-in="'+s.id+'"'+(r.in?' disabled':'')+'>Clock in</button><button class="outb" data-out="'+s.id+'"'+(!r.in||r.out?' disabled':'')+'>Clock out</button><button class="ghost" data-bc="'+s.id+'">Barcode</button></div></div>'}).join(''):'<div class="empty">No students yet. Add your first one above.</div>';
 }
 function show(v){if(v!=='scan')stopScan();document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('on',e.dataset.v===v));window.scrollTo(0,0)}
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)});
@@ -167,7 +175,7 @@ $('list').addEventListener('click',e=>{const t=e.target;
   if(t.dataset.in)clock(t.dataset.in,'in');else if(t.dataset.out)clock(t.dataset.out,'out');else if(t.dataset.bc)showBC(t.dataset.bc);
   else if(t.dataset.del&&confirm('Remove this student?')){S.students=S.students.filter(s=>s.id!==t.dataset.del);save();render()}});
 function newId(){let c;do{c='S'+String(Math.floor(Math.random()*9e6)+1e6)}while(S.students.some(s=>s.id===c));return c}
-function add(){const n=$('newName').value.trim();if(!n)return;S.students.push({id:newId(),name:n,cls:$('newCls').value.trim()});$('newName').value='';$('newCls').value='';save();render()}
+function add(){const n=$('newName').value.trim();if(!n)return;S.students.push({id:newId(),name:n,cls:$('newCls').value.trim(),phone:$('newPh').value.trim()});$('newName').value='';$('newCls').value='';$('newPh').value='';save();render()}
 $('addBtn').onclick=add;$('newName').addEventListener('keydown',e=>{if(e.key==='Enter')add()});
 $('cutoff').onchange=e=>{S.cutoff=e.target.value||'08:30';save();render()};
 $('resetBtn').onclick=()=>{if(confirm('Clear all of today’s clock-ins?')){delete S.log[dk()];save();render()}};
@@ -232,6 +240,22 @@ $('aGo').onclick=authGo;
 $('aCancel').onclick=unlock;
 $('logoutBtn').onclick=()=>{try{sessionStorage.removeItem('att-ok')}catch(e){}stopScan();authUI('login')};
 $('aForgot').onclick=()=>{if(confirm('Reset the app? This erases all students, attendance records and the login on this phone.')){try{localStorage.removeItem(KEY);localStorage.removeItem(AK)}catch(e){}location.reload()}};
+function toIntl(n){let d=String(n||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);if(d.startsWith('0'))d='92'+d.slice(1);return d}
+function msgText(x){
+  const t=hm(x.t),d=new Date(x.t),dt=d.toLocaleDateString('en-GB'),c=x.cls?' (Class '+x.cls+')':'';
+  const en='Assalam o Alaikum. '+x.name+c+' has '+(x.type==='in'?'arrived at':'left')+' Islamia Model School Agarai at '+t+' on '+d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})+'.';
+  const ur='السلام علیکم۔ '+x.name+(x.cls?' (جماعت '+x.cls+')':'')+' اسلامیہ ماڈل سکول آگرائی '+(x.type==='in'?'پہنچ گئے ہیں۔':'سے روانہ ہو گئے ہیں۔')+' وقت: '+t+'، تاریخ: '+dt;
+  const l=S.lang||'en';return l==='ur'?ur:l==='both'?ur+'\n\n'+en:en}
+function renderNotes(){const n=S.notes||[];$('notesCard').hidden=!n.length;$('nCount').textContent=n.length;$('nBadge').hidden=!n.length;$('nBadge').textContent=n.length;
+  $('notes').innerHTML=n.map((x,i)=>'<div class="ev"><span>'+esc(x.name)+'<br><span class="sub">'+(x.type==='in'?'Arrived ':'Left ')+hm(x.t)+'</span></span><span><button data-wa="'+i+'">WhatsApp</button> <button class="ghost" data-sms="'+i+'">SMS</button> <button class="x" data-skip="'+i+'" aria-label="Dismiss">×</button></span></div>').join('')}
+const _r=render;render=function(){_r();renderNotes();$('langSel').value=S.lang||'en'};
+$('langSel').onchange=e=>{S.lang=e.target.value;save()};
+$('notes').addEventListener('click',e=>{const d=e.target.dataset;let i=-1,k='';
+  if(d.wa!==undefined){i=+d.wa;k='wa'}else if(d.sms!==undefined){i=+d.sms;k='sms'}else if(d.skip!==undefined){i=+d.skip;k='skip'}
+  const x=(S.notes||[])[i];if(!x)return;
+  if(k!=='skip'){const n=toIntl(x.phone),m=encodeURIComponent(msgText(x));window.open(k==='wa'?'https://wa.me/'+n+'?text='+m:'sms:+'+n+'?body='+m,'_blank')}
+  S.notes.splice(i,1);save();render()});
+$('list').addEventListener('change',e=>{const id=e.target.dataset.ph;if(id){const s=S.students.find(x=>x.id===id);if(s){s.phone=e.target.value.trim();save()}}});
 (function(){const a=getAuth();let ok=false;try{ok=sessionStorage.getItem('att-ok')==='1'}catch(e){}
   if(a&&ok)unlock();else authUI(a?'login':'setup')})();
 </script>
