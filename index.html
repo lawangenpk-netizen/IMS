@@ -74,6 +74,9 @@ body.locked header,body.locked main,body.locked nav{display:none}
 nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d33;color:#fff;border-radius:99px;font-size:10px;padding:0 6px;line-height:16px}
 .ph{width:100%;margin:2px 0 8px;font-size:14px;padding:8px 10px}
 #notes .ev button{padding:6px 10px;font-size:13px}
+.lnk{display:block;text-align:center;padding:13px;border-radius:12px;background:var(--g);color:#fff;text-decoration:none;font-weight:600;margin:8px 0}
+.lnk.alt{background:transparent;color:var(--g);border:1px solid var(--g)}
+#helpModal{z-index:60}
 </style>
 </head>
 <body class="locked">
@@ -88,6 +91,7 @@ nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d
   <button id="aGo">Sign in</button>
   <button class="link" id="aCancel" hidden>Cancel</button>
   <button class="link" id="aForgot" hidden>Forgot password? Reset app</button>
+  <button class="link" id="aHelp">Need help? Contact support</button>
 </div></div>
 <header><div class="hd">
   <div class="crest"><img class="lg" alt="" style="width:100%;height:100%;border-radius:50%"></div>
@@ -109,6 +113,7 @@ nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d
   <div class="card"><h2>Last 7 days</h2><div class="bars" id="bars"></div></div>
   <div class="card"><h2>Recent activity</h2><div id="evs"></div></div>
   <div class="card"><h2>Settings</h2><div class="row" style="align-items:center;margin:0"><span class="sub">Late after</span><input id="cutoff" type="time" style="flex:0 0 120px"><button class="ghost" id="resetBtn" style="margin-left:auto">Reset today</button></div><div class="row" style="align-items:center;margin:10px 0 0"><span class="sub">Parent message language</span><select id="langSel" style="margin-left:auto;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option value="en">English</option><option value="ur">اردو</option><option value="both">Both</option></select></div><div class="row" id="autoRow" hidden style="margin:12px 0 0;align-items:center"><label style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="autoSms" style="flex:none;width:20px;height:20px"><span>Auto-send SMS to parents from this phone’s SIM<br><span class="sub" id="smsStat"></span></span></label></div></div>
+  <div class="card"><h2>Help &amp; Support</h2><p class="sub" style="margin:0 0 10px">Problem with the app? Contact us on WhatsApp or email.</p><button id="helpBtn" style="width:100%">Help &amp; Support</button></div>
 </section>
 <section class="view" id="v-scan">
   <div class="card"><div class="top"><h2 style="margin:0">Scan student barcode</h2><button id="scanBtn">Start camera</button></div>
@@ -127,6 +132,10 @@ nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d
   <button data-v="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan<span class="bdg" id="nBadge" hidden></span></button>
   <button data-v="stu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-4 3-6 6.500-6s6 2 6.500 6M16 5a3.500 3.500 0 0 1 0 7M18 14c2 .6 3.200 2.600 3.500 6"/></svg>Students</button>
 </div></nav>
+<div id="helpModal" class="modal" hidden><div class="mbox"><h2 style="margin:0 0 4px">Help &amp; Support</h2><p class="sub" style="margin:0 0 12px">Having a problem? Contact us and we will help you.</p>
+<a class="lnk" target="_blank" rel="noopener" href="https://wa.me/971525266949?text=Hello%2C%20I%20need%20help%20with%20the%20Islamia%20Model%20School%20Agarai%20attendance%20app.">Chat on WhatsApp</a>
+<a class="lnk alt" target="_blank" rel="noopener" href="mailto:lawangenpk@gmail.com?subject=Help%20with%20Islamia%20Attendance%20app&amp;body=Hello%2C%0D%0A%0D%0AI%20need%20help%20with%20the%20Islamia%20Model%20School%20Agarai%20attendance%20app.%0D%0A%0D%0A">Send email</a>
+<div class="sub" style="margin:10px 0 14px">lawangenpk@gmail.com<br>+971 52 526 6949</div><button id="helpClose" class="ghost" style="width:100%">Close</button></div></div>
 <div id="bcModal" class="modal" hidden><div class="mbox"><div class="idc"><img class="lg" alt="" style="width:64px;height:64px;border-radius:50%;display:block;margin:0 auto 6px"><h3>ISLAMIA MODEL SCHOOL AGARAI</h3><div class="name" id="bcName" style="margin-top:6px"></div><div class="sub" id="bcCls"></div><svg id="bcSvg"></svg><div class="sub" id="bcCode"></div></div><div class="btns" style="margin-top:12px"><button class="ghost" id="bcPrint">Print</button><button id="bcClose">Close</button></div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -260,6 +269,8 @@ $('notes').addEventListener('click',e=>{const d=e.target.dataset;let i=-1,k='';
   S.notes.splice(i,1);save();render()});
 $('list').addEventListener('change',e=>{const id=e.target.dataset.ph;if(id){const s=S.students.find(x=>x.id===id);if(s){s.phone=e.target.value.trim();save()}}});
 if(window.AndroidSms){$('autoRow').hidden=false;$('autoSms').checked=!!S.autoSms;$('autoSms').onchange=e=>{S.autoSms=e.target.checked;save();if(S.autoSms){try{AndroidSms.requestPermission()}catch(x){}}}}
+$('helpBtn').onclick=$('aHelp').onclick=()=>{$('helpModal').hidden=false};
+$('helpClose').onclick=()=>{$('helpModal').hidden=true};
 (function(){const a=getAuth();let ok=false;try{ok=sessionStorage.getItem('att-ok')==='1'}catch(e){}
   if(a&&ok)unlock();else authUI(a?'login':'setup')})();
 </script>
