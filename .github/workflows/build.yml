@@ -525,7 +525,7 @@ jobs:
                       override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                           val u = request.url
                           val host = u.host ?: ""
-                          if (u.scheme == "sms" || u.scheme == "smsto" || u.scheme == "tel" || host == "wa.me" || host.endsWith("whatsapp.com")) {
+                          if (u.scheme == "sms" || u.scheme == "smsto" || u.scheme == "tel" || u.scheme == "mailto" || host == "wa.me" || host.endsWith("whatsapp.com")) {
                               try { startActivity(Intent(Intent.ACTION_VIEW, u)) } catch (e: Exception) { }
                               return true
                           }
