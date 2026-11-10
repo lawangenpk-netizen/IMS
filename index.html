@@ -108,7 +108,7 @@ nav button{position:relative}.bdg{position:absolute;top:0;left:56%;background:#d
   </div>
   <div class="card"><h2>Last 7 days</h2><div class="bars" id="bars"></div></div>
   <div class="card"><h2>Recent activity</h2><div id="evs"></div></div>
-  <div class="card"><h2>Settings</h2><div class="row" style="align-items:center;margin:0"><span class="sub">Late after</span><input id="cutoff" type="time" style="flex:0 0 120px"><button class="ghost" id="resetBtn" style="margin-left:auto">Reset today</button></div><div class="row" style="align-items:center;margin:10px 0 0"><span class="sub">Parent message language</span><select id="langSel" style="margin-left:auto;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option value="en">English</option><option value="ur">اردو</option><option value="both">Both</option></select></div></div>
+  <div class="card"><h2>Settings</h2><div class="row" style="align-items:center;margin:0"><span class="sub">Late after</span><input id="cutoff" type="time" style="flex:0 0 120px"><button class="ghost" id="resetBtn" style="margin-left:auto">Reset today</button></div><div class="row" style="align-items:center;margin:10px 0 0"><span class="sub">Parent message language</span><select id="langSel" style="margin-left:auto;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit"><option value="en">English</option><option value="ur">اردو</option><option value="both">Both</option></select></div><div class="row" id="autoRow" hidden style="margin:12px 0 0;align-items:center"><label style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="autoSms" style="flex:none;width:20px;height:20px">Auto-send SMS to parents from this phone’s SIM</label></div></div>
 </section>
 <section class="view" id="v-scan">
   <div class="card"><div class="top"><h2 style="margin:0">Scan student barcode</h2><button id="scanBtn">Start camera</button></div>
@@ -144,10 +144,12 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const day=()=>S.log[dk()]=S.log[dk()]||{};
 const rec=id=>day()[id]||{};
 function isLate(t){const d=new Date(t),[h,m]=S.cutoff.split(':').map(Number);return d.getHours()*60+d.getMinutes()>h*60+m}
-function clock(id,type){const r=day()[id]=day()[id]||{};let ch=0;
+let autoSent=false;
+function autoSend(x){try{return !!(S.autoSms&&window.AndroidSms&&AndroidSms.hasSms()&&AndroidSms.sendSms('+'+toIntl(x.phone),msgText(x)))}catch(e){return false}}
+function clock(id,type){autoSent=false;const r=day()[id]=day()[id]||{};let ch=0;
   if(type==='in'&&!r.in){r.in=Date.now();ch=r.in}
   if(type==='out'&&r.in&&!r.out){r.out=Date.now();ch=r.out}
-  if(ch){const s=S.students.find(x=>x.id===id);if(s&&s.phone)(S.notes=S.notes||[]).push({sid:id,name:s.name,cls:s.cls||'',phone:s.phone,type,t:ch})}
+  if(ch){const s=S.students.find(x=>x.id===id);if(s&&s.phone)(S.notes=S.notes||[]).push({sid:id,name:s.name,cls:s.cls||'',phone:s.phone,type,t:ch});if(autoSend(S.notes[S.notes.length-1])){S.notes.pop();autoSent=true}}
   save();render()}
 function render(){
   $('date').textContent=new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
@@ -188,8 +190,8 @@ function toast(m,k){$('toast').innerHTML='<div class="toast '+k+'">'+esc(m)+'</d
 function handleCode(c){c=String(c).trim();const n=Date.now();if(c===last&&n-lastT<3000)return;last=c;lastT=n;
   const s=S.students.find(x=>x.id===c);if(!s){toast('Unknown barcode','bad');return}
   const r=rec(s.id);
-  if(!r.in){clock(s.id,'in');toast(s.name+' clocked IN at '+hm(Date.now()),'ok')}
-  else if(!r.out){clock(s.id,'out');toast(s.name+' clocked OUT at '+hm(Date.now()),'ok')}
+  if(!r.in){clock(s.id,'in');toast(s.name+' clocked IN at '+hm(Date.now())+(autoSent?' · SMS sent to parent':''),'ok')}
+  else if(!r.out){clock(s.id,'out');toast(s.name+' clocked OUT at '+hm(Date.now())+(autoSent?' · SMS sent to parent':''),'ok')}
   else toast(s.name+' already clocked out today','bad')}
 async function stopScan(){if(scanner){try{await scanner.stop();scanner.clear()}catch(e){}scanner=null}$('scanBtn').textContent='Start camera'}
 async function startScan(){
@@ -256,6 +258,7 @@ $('notes').addEventListener('click',e=>{const d=e.target.dataset;let i=-1,k='';
   if(k!=='skip'){const n=toIntl(x.phone),m=encodeURIComponent(msgText(x));window.open(k==='wa'?'https://wa.me/'+n+'?text='+m:'sms:+'+n+'?body='+m,'_blank')}
   S.notes.splice(i,1);save();render()});
 $('list').addEventListener('change',e=>{const id=e.target.dataset.ph;if(id){const s=S.students.find(x=>x.id===id);if(s){s.phone=e.target.value.trim();save()}}});
+if(window.AndroidSms){$('autoRow').hidden=false;$('autoSms').checked=!!S.autoSms;$('autoSms').onchange=e=>{S.autoSms=e.target.checked;save();if(S.autoSms){try{AndroidSms.requestPermission()}catch(x){}}}}
 (function(){const a=getAuth();let ok=false;try{ok=sessionStorage.getItem('att-ok')==='1'}catch(e){}
   if(a&&ok)unlock();else authUI(a?'login':'setup')})();
 </script>
